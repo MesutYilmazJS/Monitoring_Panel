@@ -30,7 +30,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-  <!-- THEME PALETTES & SIDEBAR LAYOUT STYLES -->
+  <!-- THEME PALETTES & FULLSCREEN STYLES -->
   <style>
     /* Theme 1: Amber & Coral Navy (#e08f2c, #ea8d89, #dddddc, #223f5c) */
     .theme-amber-navy {
@@ -104,6 +104,37 @@
       background-color: var(--accent-primary);
     }
 
+    /* CARD FULLSCREEN / FOCUS MODE */
+    .card-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      z-index: 99999 !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 1.5rem !important;
+      background-color: var(--bg-base) !important;
+      box-shadow: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    .card-fullscreen #terminal-logs {
+      max-height: calc(100vh - 150px) !important;
+      height: calc(100vh - 150px) !important;
+    }
+
+    .card-fullscreen .relative {
+      height: calc(100vh - 130px) !important;
+      min-height: calc(100vh - 130px) !important;
+    }
+
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 5px;
@@ -144,7 +175,7 @@
         </div>
       </div>
 
-      <!-- Navigation Links (Functional Smooth Scrolling & Active State) -->
+      <!-- Navigation Links -->
       <nav class="space-y-1 text-xs">
         <button onclick="scrollToSection('dashboard', this)" class="nav-link w-full flex items-center justify-between px-3 py-2.5 rounded-md bg-black/20 themed-accent-text font-semibold border border-white/10 text-left transition-colors">
           <span>Canlı Kontrol Paneli</span>
@@ -157,6 +188,12 @@
         <button onclick="scrollToSection('simulator', this)" class="nav-link w-full flex items-center justify-between px-3 py-2.5 rounded-md text-gray-300 hover:bg-white/5 transition-colors text-left">
           <span>Saldırı Simülatörü</span>
           <span class="text-[10px] font-mono text-gray-400">TEST</span>
+        </button>
+        <button onclick="toggleBrowserFullscreen()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-md text-gray-300 hover:bg-white/5 transition-colors text-left" title="Tarayıcı Tam Ekran Modu">
+          <span>Tam Ekran Modu</span>
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+          </svg>
         </button>
       </nav>
 
@@ -173,23 +210,12 @@
 
     </div>
 
-    <!-- Bottom Section: Theme Switcher in Left Menu -->
-    <div class="pt-4 border-t border-white/10 space-y-2">
-      <span class="text-[11px] font-medium text-gray-400 block uppercase tracking-wider">Tema Seçimi</span>
-      <div class="grid grid-cols-1 gap-1.5 text-xs">
-        <button onclick="setTheme('theme-amber-navy')" id="btn-theme-amber-navy" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
-          <span>Amber &amp; Navy</span>
-          <span class="w-2.5 h-2.5 rounded-full bg-[#e08f2c]"></span>
-        </button>
-        <button onclick="setTheme('theme-midnight-peach')" id="btn-theme-midnight-peach" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
-          <span>Midnight &amp; Peach</span>
-          <span class="w-2.5 h-2.5 rounded-full bg-[#f4bba4]"></span>
-        </button>
-        <button onclick="setTheme('theme-cyber')" id="btn-theme-cyber" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
-          <span>Kurumsal Koyu</span>
-          <span class="w-2.5 h-2.5 rounded-full bg-[#38BDF8]"></span>
-        </button>
-      </div>
+    <!-- Bottom Section: Version & Status -->
+    <div class="pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-gray-400">
+      <span class="font-mono">v1.0.0</span>
+      <span class="flex items-center gap-1.5 font-medium themed-accent-text">
+        <span class="w-1.5 h-1.5 rounded-full themed-accent-bg"></span> Canlı İzleme
+      </span>
     </div>
 
   </aside>
@@ -198,7 +224,7 @@
   <div id="main-scroll-container" class="flex-1 flex flex-col h-full overflow-y-auto">
     
     <!-- TOP HEADER -->
-    <header class="themed-header sticky top-0 z-10 px-6 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+    <header class="themed-header sticky top-0 z-10 px-6 py-3 flex items-center justify-between gap-4 shadow-sm">
       
       <!-- Page Title -->
       <div>
@@ -206,18 +232,36 @@
         <p class="text-xs text-gray-300">Güvenlik ihlallerini ve yanıt sürelerini anlık takip edin.</p>
       </div>
 
-      <!-- System Connection Badges -->
-      <div class="flex items-center gap-3">
-        <!-- Socket Status -->
-        <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded bg-black/30 border border-white/10 text-xs font-mono">
-          <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+      <!-- Header Right: Compact Icon Badges & Theme Switcher -->
+      <div class="flex items-center gap-3 text-xs">
+        
+        <!-- Host Node Info Badge -->
+        <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-black/30 border border-white/10 text-gray-300 font-mono" title="Aktif Sunucu Adresi">
+          <svg class="w-3.5 h-3.5 themed-accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+          </svg>
+          <span id="host-label" class="max-w-[180px] truncate">localhost:3001</span>
+        </div>
+
+        <!-- Socket Connection Status Badge -->
+        <div id="status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/30 border border-white/10 font-mono">
+          <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
           <span id="status-text" class="text-gray-300 font-medium">Bağlanıyor...</span>
         </div>
 
-        <!-- Node Host info -->
-        <div class="hidden sm:block text-xs font-mono text-gray-300 bg-black/30 px-3 py-1 rounded border border-white/10">
-          <span class="themed-accent-text font-medium">Sunucu:</span> <span id="host-label">localhost:3001</span>
+        <!-- Theme Quick Icon Selector -->
+        <div class="flex items-center gap-1 p-1 rounded-md bg-black/30 border border-white/10" title="Tema Seçici">
+          <button onclick="setTheme('theme-amber-navy')" id="btn-theme-amber-navy" title="Amber & Navy Tema" class="w-6 h-6 rounded flex items-center justify-center transition-colors hover:bg-white/10">
+            <span class="w-3 h-3 rounded-full bg-[#e08f2c] border border-white/20"></span>
+          </button>
+          <button onclick="setTheme('theme-midnight-peach')" id="btn-theme-midnight-peach" title="Midnight & Peach Tema" class="w-6 h-6 rounded flex items-center justify-center transition-colors hover:bg-white/10">
+            <span class="w-3 h-3 rounded-full bg-[#f4bba4] border border-white/20"></span>
+          </button>
+          <button onclick="setTheme('theme-cyber')" id="btn-theme-cyber" title="Kurumsal Koyu Tema" class="w-6 h-6 rounded flex items-center justify-center transition-colors hover:bg-white/10">
+            <span class="w-3 h-3 rounded-full bg-[#38BDF8] border border-white/20"></span>
+          </button>
         </div>
+
       </div>
 
     </header>
@@ -262,7 +306,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- MAIN LATENCY CHART (7 Cols) -->
-        <div class="lg:col-span-7 themed-card rounded-lg p-5 flex flex-col min-h-[380px]">
+        <div id="chart-card-container" class="lg:col-span-7 themed-card rounded-lg p-5 flex flex-col min-h-[380px] transition-all">
           <div class="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
             <div>
               <h3 class="text-sm font-bold text-white uppercase tracking-wider">
@@ -270,9 +314,17 @@
               </h3>
               <p class="text-xs text-gray-300 mt-0.5">300 ms üzerindeki değerler yüksek gecikmeyi gösterir.</p>
             </div>
-            <span class="text-xs font-mono text-gray-400 bg-black/20 px-2.5 py-1 rounded border border-white/10">
-              Canlı (30 İletim)
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-gray-400 bg-black/20 px-2.5 py-1 rounded border border-white/10">
+                Canlı (30 İletim)
+              </span>
+              <!-- Fullscreen Focus Mode Button for Chart -->
+              <button onclick="toggleCardFullscreen('chart-card-container')" class="p-1 rounded bg-black/20 hover:bg-white/10 text-gray-300 border border-white/10 transition-colors" title="Grafiği Odakla / Tam Ekran (ESC)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div class="relative flex-1 w-full min-h-[290px]">
@@ -281,15 +333,28 @@
         </div>
 
         <!-- SECURITY LOG TERMINAL (5 Cols) -->
-        <div id="terminal-logs-section" class="lg:col-span-5 themed-card rounded-lg flex flex-col min-h-[380px] overflow-hidden">
+        <div id="terminal-logs-section" class="lg:col-span-5 themed-card rounded-lg flex flex-col min-h-[380px] overflow-hidden transition-all">
           <div class="bg-black/30 px-4 py-3 border-b border-white/10 flex items-center justify-between">
             <div>
               <h3 class="text-xs font-bold text-gray-200 font-mono">GÜVENLİK ALARMLARI LOG AKIŞI</h3>
               <p class="text-[11px] text-gray-400">Security Middleware Bildirimleri</p>
             </div>
-            <span class="text-[10px] font-mono text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800/60 font-semibold">
-              CANLI DİNLEME
-            </span>
+            <div class="flex items-center gap-2">
+              <button id="btn-export-csv" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-mono font-medium text-gray-200 border border-white/10 transition-colors" title="Logları CSV Olarak İndir">
+                CSV İndir
+              </button>
+              <!-- Fullscreen Focus Mode Button for Logs -->
+              <button onclick="toggleCardFullscreen('terminal-logs-section')" class="p-1 rounded bg-black/20 hover:bg-white/10 text-gray-300 border border-white/10 transition-colors" title="Logları Odakla / Tam Ekran (ESC)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Log Search Bar -->
+          <div class="p-2.5 bg-black/20 border-b border-white/5">
+            <input type="text" id="log-search-input" placeholder="Loglarda ara (Endpoint, IP, Tip)..." class="w-full px-3 py-1.5 rounded bg-black/40 border border-white/10 text-xs font-mono text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors">
           </div>
 
           <div id="terminal-logs" class="flex-1 p-3.5 space-y-2.5 overflow-y-auto max-h-[320px] font-mono text-xs">
@@ -312,7 +377,7 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           <!-- SQLi Test Button -->
           <button id="btn-sim-sqli" class="flex flex-col text-left p-4 rounded-md bg-red-950/40 hover:bg-red-950/70 border border-red-800/60 transition-colors group">
@@ -326,9 +391,15 @@
             <span class="text-[11px] text-amber-300/80 mt-1">Yetkisiz ID erişim denemesi simüle eder ve kaydeder.</span>
           </button>
 
+          <!-- XSS Test Button -->
+          <button id="btn-sim-xss" class="flex flex-col text-left p-4 rounded-md bg-purple-950/40 hover:bg-purple-950/70 border border-purple-800/60 transition-colors group">
+            <span class="btn-label font-bold text-xs text-purple-200">3. XSS Saldırısı Tetikle</span>
+            <span class="text-[11px] text-purple-300/80 mt-1">Zararlı script etiketi gönderir. Güvenlik duvarı 403 ile engeller.</span>
+          </button>
+
           <!-- Latency Spike Test Button -->
           <button id="btn-sim-latency" class="flex flex-col text-left p-4 rounded-md bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-800/60 transition-colors group">
-            <span class="btn-label font-bold text-xs text-cyan-200">3. Performans Gecikmesi Tetikle</span>
+            <span class="btn-label font-bold text-xs text-cyan-200">4. Performans Gecikmesi Tetikle</span>
             <span class="text-[11px] text-cyan-300/80 mt-1">2 saniyelik yapay darboğaz yaratır, grafikte izleyebilirsiniz.</span>
           </button>
 
@@ -344,7 +415,7 @@
 
   </div>
 
-  <!-- NAVIGATION & THEME SCRIPT -->
+  <!-- NAVIGATION, THEME & FULLSCREEN SCRIPTS -->
   <script>
     function scrollToSection(sectionId, linkEl) {
       const target = document.getElementById(sectionId);
@@ -362,6 +433,44 @@
         linkEl.classList.remove('text-gray-300');
       }
     }
+
+    function toggleCardFullscreen(elementId) {
+      const card = document.getElementById(elementId);
+      if (!card) return;
+      card.classList.toggle('card-fullscreen');
+
+      // Trigger chart resize if chart card was toggled
+      if (window.app && window.app.chartController && window.app.chartController.chart) {
+        setTimeout(() => {
+          window.app.chartController.chart.resize();
+          window.app.chartController.chart.update();
+        }, 60);
+      }
+    }
+
+    function toggleBrowserFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.warn('Fullscreen request failed:', err.message);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Press ESC key to exit card focus mode
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.card-fullscreen').forEach(el => {
+          el.classList.remove('card-fullscreen');
+        });
+        if (window.app && window.app.chartController && window.app.chartController.chart) {
+          window.app.chartController.chart.resize();
+        }
+      }
+    });
 
     function setTheme(themeName) {
       document.documentElement.className = 'h-full ' + themeName;

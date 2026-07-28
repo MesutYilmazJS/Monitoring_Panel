@@ -1,12 +1,15 @@
 /**
  * SecurityLogger Class
- * Manages the live cyber terminal security alert feed UI.
+ * Manages the live cyber terminal security alert feed UI, search filtering, and CSV export.
  */
 class SecurityLogger {
   constructor(terminalContainerId) {
     this.containerId = terminalContainerId;
     this.container = null;
     this.alertCount = 0;
+    this.logsHistory = [];
+    this.currentSearchQuery = '';
+    this.currentSeverityFilter = 'ALL';
   }
 
   init() {
@@ -14,6 +17,8 @@ class SecurityLogger {
     if (!this.container) {
       console.error(`❌ Terminal container #${this.containerId} not found!`);
     }
+
+    this._bindFilterEvents();
   }
 
   /**
@@ -23,6 +28,7 @@ class SecurityLogger {
     if (!this.container) return;
 
     this.alertCount++;
+    this.logsHistory.unshift(alertData); // Keep newest at index 0
     this._updateAlertCountUI();
 
     const timestamp = new Date(alertData.created_at || Date.now()).toLocaleTimeString('tr-TR', {
@@ -37,8 +43,10 @@ class SecurityLogger {
       : 'bg-amber-950/80 text-amber-400 border-amber-800';
 
     const logEntry = document.createElement('div');
-    logEntry.className = 'font-mono text-xs p-2.5 rounded bg-gray-900/90 border border-gray-800/80 shadow-md animate-fade-in space-y-1 text-gray-300';
-    
+    logEntry.className = 'log-item font-mono text-xs p-2.5 rounded bg-gray-900/90 border border-gray-800/80 shadow-md transition-all space-y-1 text-gray-300';
+    logEntry.dataset.severity = alertData.severity || 'HIGH';
+    logEntry.dataset.searchtext = `${alertData.type} ${alertData.endpoint} ${alertData.payload} ${alertData.ip_address}`.toLowerCase();
+
     logEntry.innerHTML = `
       <div class="flex items-center justify-between text-[11px] border-b border-gray-800/60 pb-1 mb-1 text-gray-400">
         <span class="flex items-center gap-1.5">
@@ -56,6 +64,11 @@ class SecurityLogger {
       </div>
     `;
 
+    // Apply active filter state to new element
+    if (!this._matchesFilter(logEntry.dataset.searchtext, logEntry.dataset.severity)) {
+      logEntry.style.display = 'none';
+    }
+
     this.container.prepend(logEntry); // Newest alerts at top
 
     // Maintain max 100 entries in DOM
@@ -69,8 +82,82 @@ class SecurityLogger {
    */
   loadInitialLogs(logsList) {
     if (!logsList || !Array.isArray(logsList)) return;
-    // Iterate in reverse so newest end up on top
     [...logsList].reverse().forEach(log => this.logAlert(log));
+  }
+
+  /**
+   * Filter visible logs by search query and severity
+   */
+  filterLogs(query = '', severity = 'ALL') {
+    this.currentSearchQuery = query.toLowerCase().trim();
+    this.currentSeverityFilter = severity;
+
+    if (!this.container) return;
+
+    const items = this.container.querySelectorAll('.log-item');
+    items.forEach(item => {
+      const searchText = item.dataset.searchtext || '';
+      const itemSeverity = item.dataset.severity || 'HIGH';
+
+      if (this._matchesFilter(searchText, itemSeverity)) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  /**
+   * Exports recorded security logs to CSV file and triggers download
+   */
+  exportToCSV() {
+    if (this.logsHistory.length === 0) {
+      alert('İndirilecek güvenlik kaydı bulunamadı.');
+      return;
+    }
+
+    let csvContent = 'data:text/csv;charset=utf-8,Zaman,Turu,Kritiklik,Endpoint,Payload,IP Adresi\n';
+
+    this.logsHistory.forEach(log => {
+      const time = new Date(log.created_at || Date.now()).toISOString();
+      const type = `"${(log.type || '').replace(/"/g, '""')}"`;
+      const severity = `"${log.severity || 'HIGH'}"`;
+      const endpoint = `"${(log.endpoint || '').replace(/"/g, '""')}"`;
+      const payload = `"${(log.payload || '').replace(/"/g, '""')}"`;
+      const ip = `"${log.ip_address || 'Unknown'}"`;
+
+      csvContent += `${time},${type},${severity},${endpoint},${payload},${ip}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `security_logs_report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  _bindFilterEvents() {
+    const searchInput = document.getElementById('log-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.filterLogs(e.target.value, this.currentSeverityFilter);
+      });
+    }
+
+    const exportBtn = document.getElementById('btn-export-csv');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        this.exportToCSV();
+      });
+    }
+  }
+
+  _matchesFilter(searchText, itemSeverity) {
+    const matchesQuery = !this.currentSearchQuery || searchText.includes(this.currentSearchQuery);
+    const matchesSeverity = this.currentSeverityFilter === 'ALL' || itemSeverity === this.currentSeverityFilter;
+    return matchesQuery && matchesSeverity;
   }
 
   _updateAlertCountUI() {

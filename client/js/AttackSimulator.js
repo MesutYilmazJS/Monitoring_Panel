@@ -14,6 +14,7 @@ class AttackSimulator {
   _bindButtonEvents() {
     const btnSqli = document.getElementById('btn-sim-sqli');
     const btnIdor = document.getElementById('btn-sim-idor');
+    const btnXss = document.getElementById('btn-sim-xss');
     const btnLatency = document.getElementById('btn-sim-latency');
 
     if (btnSqli) {
@@ -28,6 +29,12 @@ class AttackSimulator {
       });
     }
 
+    if (btnXss) {
+      btnXss.addEventListener('click', () => {
+        this.triggerXssAttack(btnXss);
+      });
+    }
+
     if (btnLatency) {
       btnLatency.addEventListener('click', () => {
         this.triggerLatencySpike(btnLatency);
@@ -36,36 +43,48 @@ class AttackSimulator {
   }
 
   async triggerSqliAttack(btnElement) {
-    this._setButtonState(btnElement, true, '⚡ SQLi Saldırısı Atılıyor...');
+    this._setButtonState(btnElement, true, 'SQLi Saldırısı Gönderiliyor...');
     try {
       const maliciousPayload = encodeURIComponent("1' OR '1'='1'; DROP TABLE security_logs; --");
       await fetch(`${this.serverUrl}/api/test/sqli?q=${maliciousPayload}`);
     } catch (err) {
       console.error('SQLi Attack Simulation Error:', err);
     } finally {
-      this._setButtonState(btnElement, false, '💥 SQL Injection Saldırısı');
+      this._setButtonState(btnElement, false, '1. SQL Injection Saldırısı Tetikle');
     }
   }
 
   async triggerIdorProbe(btnElement) {
-    this._setButtonState(btnElement, true, '⚡ IDOR Taraması Yapılıyor...');
+    this._setButtonState(btnElement, true, 'IDOR Taraması Gönderiliyor...');
     try {
       await fetch(`${this.serverUrl}/api/test/idor?id=0&bypass=true&role=admin`);
     } catch (err) {
       console.error('IDOR Probe Simulation Error:', err);
     } finally {
-      this._setButtonState(btnElement, false, '🛡️ IDOR Yetki İhlali');
+      this._setButtonState(btnElement, false, '2. IDOR Yetki İhlali Tetikle');
+    }
+  }
+
+  async triggerXssAttack(btnElement) {
+    this._setButtonState(btnElement, true, 'XSS Saldırısı Gönderiliyor...');
+    try {
+      const xssPayload = encodeURIComponent("<script>alert(document.cookie)</script>");
+      await fetch(`${this.serverUrl}/api/test/xss?comment=${xssPayload}`);
+    } catch (err) {
+      console.error('XSS Attack Simulation Error:', err);
+    } finally {
+      this._setButtonState(btnElement, false, '3. XSS Saldırısı Tetikle');
     }
   }
 
   async triggerLatencySpike(btnElement) {
-    this._setButtonState(btnElement, true, '⚡ Darboğaz Yaratılıyor (2s)...');
+    this._setButtonState(btnElement, true, 'Darboğaz Yaratılıyor (2s)...');
     try {
       await fetch(`${this.serverUrl}/api/test/latency?delay=2000`);
     } catch (err) {
       console.error('Latency Spike Simulation Error:', err);
     } finally {
-      this._setButtonState(btnElement, false, '⏱️ Performans Darboğazı');
+      this._setButtonState(btnElement, false, '4. Performans Gecikmesi Tetikle');
     }
   }
 
@@ -77,6 +96,7 @@ class AttackSimulator {
     } else {
       btn.classList.remove('opacity-75', 'cursor-not-allowed', 'animate-pulse');
     }
-    btn.querySelector('.btn-label').textContent = text;
+    const labelEl = btn.querySelector('.btn-label');
+    if (labelEl) labelEl.textContent = text;
   }
 }

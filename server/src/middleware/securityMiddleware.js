@@ -18,6 +18,17 @@ const IDOR_PATTERNS = [
   /user_id\s*=\s*0/i              // Root/System user ID probe
 ];
 
+// XSS (Cross-Site Scripting) Patterns
+const XSS_PATTERNS = [
+  /<script\b[^>]*>([\s\S]*?)<\/script>/i,
+  /javascript\s*:/i,
+  /onerror\s*=/i,
+  /onload\s*=/i,
+  /<iframe\b[^>]*>/i,
+  /document\.cookie/i,
+  /<img\s+[^>]*src\s*=\s*['"]?javascript:/i
+];
+
 /**
  * Checks string content against a list of regex patterns.
  */
@@ -28,7 +39,7 @@ function matchesPatterns(input, patterns) {
 }
 
 /**
- * Express Middleware for Real-time Security Monitoring (SQLi & IDOR Detection)
+ * Express Middleware for Real-time Security Monitoring (SQLi, IDOR & XSS Detection)
  */
 function createSecurityMiddleware(io) {
   return async (req, res, next) => {
@@ -59,7 +70,15 @@ function createSecurityMiddleware(io) {
         break;
       }
 
-      // 2. Check for IDOR / Privilege Escalation Attempt
+      // 2. Check for XSS (Cross-Site Scripting)
+      if (matchesPatterns(serialized, XSS_PATTERNS)) {
+        detectedType = 'Cross-Site Scripting (XSS)';
+        detectedPayload = serialized;
+        severity = 'HIGH';
+        break;
+      }
+
+      // 3. Check for IDOR / Privilege Escalation Attempt
       if (matchesPatterns(serialized, IDOR_PATTERNS)) {
         detectedType = 'IDOR / Unauthorized Access';
         detectedPayload = serialized;
@@ -71,7 +90,6 @@ function createSecurityMiddleware(io) {
     // Specific IDOR Check for direct ID manipulation on sensitive endpoints
     if (!detectedType && req.path.includes('/user/')) {
       const requestedId = req.params.id || req.query.id;
-      // Simulated rule: ID < 10 or ID = 1 with suspicious header/query triggers IDOR alert
       if (requestedId && (requestedId === '1' || requestedId === '0' || req.query.bypass === 'true')) {
         detectedType = 'IDOR / Unauthorized Access';
         detectedPayload = `Endpoint: ${req.path}, Query: ${JSON.stringify(req.query)}`;

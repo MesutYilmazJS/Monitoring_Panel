@@ -61,6 +61,14 @@ router.get('/api/test/idor', (req, res) => {
   });
 });
 
+// 3. XSS (Cross-Site Scripting) Simulation Target Endpoint
+router.get('/api/test/xss', (req, res) => {
+  res.json({
+    message: 'Comment processed successfully',
+    input: req.query
+  });
+});
+
 // 3. High Latency (Bottleneck) Performance Simulation Target Endpoint
 router.get('/api/test/latency', (req, res) => {
   const delayMs = parseInt(req.query.delay || '1200', 10);
