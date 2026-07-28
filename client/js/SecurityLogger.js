@@ -1,6 +1,6 @@
 /**
  * SecurityLogger Class
- * Manages the live cyber terminal security alert feed UI, search filtering, and CSV export.
+ * Manages the live cyber terminal security alert feed UI, search filtering, CSV export, log clearing, and Web Desktop Notifications.
  */
 class SecurityLogger {
   constructor(terminalContainerId) {
@@ -10,6 +10,7 @@ class SecurityLogger {
     this.logsHistory = [];
     this.currentSearchQuery = '';
     this.currentSeverityFilter = 'ALL';
+    this.notificationsEnabled = false;
   }
 
   init() {
@@ -19,10 +20,11 @@ class SecurityLogger {
     }
 
     this._bindFilterEvents();
+    this._checkNotificationPermission();
   }
 
   /**
-   * Render a new security alert line in the terminal feed
+   * Render a new security alert line in the terminal feed and trigger desktop notification if enabled
    */
   logAlert(alertData) {
     if (!this.container) return;
@@ -75,6 +77,27 @@ class SecurityLogger {
     if (this.container.children.length > 100) {
       this.container.removeChild(this.container.lastChild);
     }
+
+    // Trigger Desktop Web Notification if page is hidden / background tab
+    if (this.notificationsEnabled && document.hidden) {
+      this._showDesktopNotification(alertData);
+    }
+  }
+
+  /**
+   * Clears terminal logs view and history
+   */
+  clearLogs() {
+    this.logsHistory = [];
+    this.alertCount = 0;
+    if (this.container) {
+      this.container.innerHTML = `
+        <div class="text-xs text-gray-400 italic text-center py-16">
+          Güvenlik dinleyicisi aktif. İhlal denemeleri burada görüntülenecektir...
+        </div>
+      `;
+    }
+    this._updateAlertCountUI();
   }
 
   /**
@@ -138,6 +161,53 @@ class SecurityLogger {
     document.body.removeChild(link);
   }
 
+  requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      alert('Bu tarayıcı masaüstü bildirimlerini desteklemiyor.');
+      return;
+    }
+
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        this.notificationsEnabled = true;
+        this._updateNotificationButtonUI(true);
+        new Notification('🛡️ Security Monitor', { body: 'Masaüstü bildirimleri aktif edildi.' });
+      } else {
+        this.notificationsEnabled = false;
+        this._updateNotificationButtonUI(false);
+      }
+    });
+  }
+
+  _checkNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      this.notificationsEnabled = true;
+      this._updateNotificationButtonUI(true);
+    }
+  }
+
+  _showDesktopNotification(alertData) {
+    new Notification(`🚨 [SEC-ALERT] ${alertData.type}`, {
+      body: `Endpoint: ${alertData.endpoint}\nIP: ${alertData.ip_address}`,
+      icon: '/favicon.ico'
+    });
+  }
+
+  _updateNotificationButtonUI(isEnabled) {
+    const btn = document.getElementById('btn-toggle-notif');
+    if (btn) {
+      if (isEnabled) {
+        btn.classList.add('bg-emerald-950/80', 'text-emerald-300', 'border-emerald-700/80');
+        btn.classList.remove('bg-slate-800', 'text-gray-200');
+        btn.textContent = '🔔 Bildirimler Açık';
+      } else {
+        btn.classList.remove('bg-emerald-950/80', 'text-emerald-300', 'border-emerald-700/80');
+        btn.classList.add('bg-slate-800', 'text-gray-200');
+        btn.textContent = '🔔 Bildirim İzni';
+      }
+    }
+  }
+
   _bindFilterEvents() {
     const searchInput = document.getElementById('log-search-input');
     if (searchInput) {
@@ -150,6 +220,20 @@ class SecurityLogger {
     if (exportBtn) {
       exportBtn.addEventListener('click', () => {
         this.exportToCSV();
+      });
+    }
+
+    const clearBtn = document.getElementById('btn-clear-logs');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        this.clearLogs();
+      });
+    }
+
+    const notifBtn = document.getElementById('btn-toggle-notif');
+    if (notifBtn) {
+      notifBtn.addEventListener('click', () => {
+        this.requestNotificationPermission();
       });
     }
   }

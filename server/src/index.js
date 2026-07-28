@@ -47,10 +47,16 @@ app.use(routes);
 io.on('connection', (socket) => {
   console.log(`🔌 [Socket.io] New client connected: ${socket.id}`);
 
+  // Send immediate telemetry update to newly connected client
+  socket.emit('system_telemetry', {
+    memory_mb: Math.round(process.memoryUsage().rss / (1024 * 1024)),
+    active_clients: io.engine ? io.engine.clientsCount : 1,
+    uptime_sec: Math.round(process.uptime())
+  });
+
   // Handle client-initiated attack simulations
   socket.on('trigger_simulation', (data) => {
     console.log(`🎯 [Simulation Triggered] Type: ${data.type}`);
-    // Broadcast notification to all connected clients
     io.emit('simulation_status', {
       type: data.type,
       status: 'EXECUTING',
@@ -62,6 +68,19 @@ io.on('connection', (socket) => {
     console.log(`❌ [Socket.io] Client disconnected: ${socket.id}`);
   });
 });
+
+// Periodic System Telemetry Broadcaster (RAM & Active Socket Clients)
+setInterval(() => {
+  if (io) {
+    const memoryMb = Math.round(process.memoryUsage().rss / (1024 * 1024));
+    const activeClients = io.engine ? io.engine.clientsCount : 0;
+    io.emit('system_telemetry', {
+      memory_mb: memoryMb,
+      active_clients: activeClients,
+      uptime_sec: Math.round(process.uptime())
+    });
+  }
+}, 3000);
 
 // Start synthetic background traffic generator for performance metrics
 perfAnalyzer.startBackgroundTraffic(3000);

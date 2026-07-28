@@ -94,6 +94,11 @@ class App {
     this.socketManager.on('security_alert', (alert) => {
       this.securityLogger.logAlert(alert);
     });
+
+    // Real-time Server System Telemetry (RAM & Active Clients)
+    this.socketManager.on('system_telemetry', (telemetry) => {
+      this._updateTelemetryUI(telemetry);
+    });
   }
 
   _updateConnectionBadge(isConnected) {
@@ -112,7 +117,19 @@ class App {
       badgeText.textContent = 'DISCONNECTED';
       badgeText.className = 'text-xs font-mono font-bold text-red-400';
       badgeDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#EF4444]';
-      badge.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/80';
+      badge.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-red-800/80';
+    }
+  }
+
+  _updateTelemetryUI(data) {
+    const ramEl = document.getElementById('stat-server-ram');
+    const clientsEl = document.getElementById('stat-active-clients');
+
+    if (ramEl && data.memory_mb) {
+      ramEl.textContent = `${data.memory_mb} MB`;
+    }
+    if (clientsEl && data.active_clients !== undefined) {
+      clientsEl.textContent = `${data.active_clients}`;
     }
   }
 

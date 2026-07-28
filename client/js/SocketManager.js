@@ -10,7 +10,8 @@ class SocketManager {
       onConnect: null,
       onDisconnect: null,
       onSecurityAlert: null,
-      onPerformanceMetric: null
+      onPerformanceMetric: null,
+      onSystemTelemetry: null
     };
   }
 
@@ -54,6 +55,10 @@ class SocketManager {
     this.socket.on('performance_metric', (data) => {
       if (this.callbacks.onPerformanceMetric) this.callbacks.onPerformanceMetric(data);
     });
+
+    this.socket.on('system_telemetry', (data) => {
+      if (this.callbacks.onSystemTelemetry) this.callbacks.onSystemTelemetry(data);
+    });
   }
 
   on(event, callback) {
@@ -61,6 +66,7 @@ class SocketManager {
     if (event === 'disconnect') this.callbacks.onDisconnect = callback;
     if (event === 'security_alert') this.callbacks.onSecurityAlert = callback;
     if (event === 'performance_metric') this.callbacks.onPerformanceMetric = callback;
+    if (event === 'system_telemetry') this.callbacks.onSystemTelemetry = callback;
   }
 
   emit(event, payload) {
