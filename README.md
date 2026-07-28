@@ -1,4 +1,5 @@
 # 🛡️ Canlı Güvenlik ve Performans Monitörü (SEC-PERF)
+👉 **[Demo](https://monitoring-panel-six.vercel.app](https://monitoring-panel-six.vercel.app)**
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
 ![Socket.io](https://img.shields.io/badge/Socket.io-v4.7+_WebSockets-black.svg)
