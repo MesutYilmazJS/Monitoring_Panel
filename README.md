@@ -1,7 +1,7 @@
 # 🛡️ Canlı Güvenlik ve Performans Monitörü (SEC-PERF)
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
-![Socket.io](https://img.shields.io/badge/Socket.io-v4.7+-black.svg)
+![Socket.io](https://img.shields.io/badge/Socket.io-v4.7+_WebSockets-black.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v15+-blue.svg)
 ![Vanilla JS OOP](https://img.shields.io/badge/Vanilla_JS-ES6+_OOP-yellow.svg)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3.0+-38bdf8.svg)
@@ -21,32 +21,33 @@
 
 ## 💡 Neden Bu Proje? (Portfolyo Tanıtımı)
 
-Bu proje; modern web geliştirme süreçlerinde **nesne yönelimli programlama (OOP) disiplinini**, **gerçek zamanlı (Real-Time) olay akışlarını** ve **siber güvenlik farkındalığını** sergilemek amacıyla geliştirilmiştir.
+Bu proje; modern web geliştirme süreçlerinde **nesne yönelimli programlama (OOP) disiplinini**, **gerçek zamanlı (Real-Time WebSockets) olay akışlarını** ve **siber güvenlik farkındalığını** sergilemek amacıyla geliştirilmiştir.
 
-Hiçbir harici ön yüz mimari kütüphanesi (React, Vue vb.) kullanılmadan, tamamen **Vanilla JS ES6+ Sınıf Yapısıyla** kapsüllenmiş (encapsulated) modüler bir mimari kurulmuştur.
+Hiçbir harici ön yüz kütüphanesi (React, Vue vb.) kullanılmadan, tamamen **Vanilla JS ES6+ Sınıf Yapısıyla** kapsüllenmiş (encapsulated) modüler bir mimari kurulmuştur.
 
 ---
 
-## 🔥 Projede Sergilenen Yetkinlikler
+## 🔥 Öne Çıkan Özellikler & Yetkinlikler
 
-### 1. 🛡️ Siber Güvenlik Duvarı (Custom Security Middleware)
+### 1. ⚡ Gerçek Zamanlı Socket.io Mimarisi (Real-Time WebSockets)
+- Polling (sayfa yenileyerek istek atma) yerine client ve server arasında sürekli açık tutulan tek bir TCP soket kanalı kullanılır.
+- İki farklı tarayıcı sekmesinde veya cihazda açıldığında, bir sekmede tetiklenen güvenlik ihlali veya gecikme **diğer tüm ekranlara canlı olarak yayınlanır (`io.emit`)**.
+
+### 2. 🛡️ Siber Güvenlik Duvarı (Custom Security Middleware)
 Gelen tüm HTTP isteklerinin gövde, sorgu ve parametrelerini denetleyen özelleştirilmiş kural motoru:
 - **SQL Injection (SQLi):** `UNION SELECT`, `OR 1=1`, `; --` gibi zararlı veri tabanı enjeksiyonlarını tespit edip `403 Forbidden` ile engeller.
 - **IDOR / Yetki İhlali:** Yetkisiz kullanıcı ID'si değiştirme ve path traversal (`../`) denemelerini yakalar.
-- **Cross-Site Scripting (XSS):** `<script>`, `onerror=`, `onload=` gibi zararlı kod çalıştırma girişimlerini süzerek kaydeder.
+- **Cross-Site Scripting (XSS):** `<script>`, `onerror=`, `onload=` gibi zararlı script enjeksiyonlarını süzerek kaydeder.
 
-### 2. ⚡ Gerçek Zamanlı Performans Akışı (WebSockets & Socket.io)
-- İstek yanıt sürelerini milisaniye cinsinden hesaplar.
-- Sunucu ve veritabanı üzerindeki yükü **Socket.io** üzerinden canlı olarak ön yüze aktarır.
-- Chart.js ile 300 ms üzerindeki performans darboğazlarını (Spikes) kırmızı renk uyarısıyla canlı çizer.
+### 3. 📈 Canlı Performans & RAM Grafikleri (Chart.js)
+- **Ana Latency Grafiği:** HTTP yanıt sürelerini canlı çizer, 300 ms üzerindeki darboğazları (Spikes) kırmızı uyarı rengiyle gösterir.
+- **Canlı RAM Telemetri Grafiği:** Sunucunun anlık RAM tüketimini (`MB`) her 3 saniyede bir kayar mini çizgi grafikte gösterir.
 
-### 3. 🏗️ Temiz Modüler Mimarisi (Vanilla JS OOP)
-Kod spagettiye dönüşmeden, her biri tek bir sorumluluğu üstlenen (Single Responsibility Principle) sınıflara ayrılmıştır:
-- `SocketManager`: WebSocket bağlantı yaşam döngüsü.
-- `ChartController`: Chart.js grafik yönetimi ve tema renk uyarlaması.
-- `SecurityLogger`: Live terminal feed, canlı arama ve CSV rapor indirme.
-- `AttackSimulator`: Canlı test buton etkileşimleri.
-- `App`: Sınıflar arası veri akışını yöneten ana koordinatör.
+### 4. 📄 CSV Raporlama, Filtreleme ve Masaüstü Bildirimleri
+- **CSV İndir:** Biriken tüm ihlal loglarını tek tıkla `.csv` raporu olarak indirme.
+- **Canlı Log Arama:** IP adresi, Endpoint veya İhlal türüne göre anlık süzme.
+- **🔔 Masaüstü Bildirimleri (Web Notification API):** Sekme arka plandayken gelen kritik ihlalleri işletim sistemi bildirimi olarak fırlatma.
+- **🖥️ Tam Ekran Odaklanma Modu (Focus Mode):** Grafikleri veya terminali tek tıkla ekranı kaplayacak boyutta inceleme (`ESC` ile çıkış).
 
 ---
 
@@ -63,25 +64,35 @@ Arayüzdeki **Saldırı Simülatörü Konsolu** butonlarına basarak sistemin te
 
 ---
 
-## 📐 Sistem Mimarısı ve Veri Akışı
+## 📐 Sistem Mimarisi ve Veri Akışı
 
 ```text
-  [ İstemci Tarayıcı ] 
-           │
-           ├── (1) HTTP İstekleri ──────────────► [ Security Middleware ]
-           │                                            │
-           │                                   (SQLi / IDOR / XSS Kontrolü)
-           │                                            │
-           │                                            ├─► [ PostgreSQL DB ]
-           │                                            │
-           └── (2) Real-time WebSockets ◄───────────────┴─► [ Socket.io Server ]
+  [ İstemci Tarayıcı (Vanilla JS OOP) ] 
+                 │
+                 ├── (1) REST HTTP İstekleri ────────► [ Express Security Middleware ]
+                 │                                                │
+                 │                                       (SQLi / IDOR / XSS Kontrolü)
+                 │                                                │
+                 │                                                ├─► [ PostgreSQL DB ]
+                 │                                                │
+                 └── (2) Real-time WebSockets ◄───────────────────┴─► [ Socket.io Server ]
 ```
+
+---
+
+## 🏗️ Temiz Modüler Mimari (Vanilla JS OOP)
+
+- `SocketManager`: WebSocket bağlantı yaşam döngüsü ve dinleyiciler.
+- `ChartController`: Chart.js ana latency grafik yönetimi.
+- `RamChartController`: Canlı sunucu bellek çizgisi grafik yönetimi.
+- `SecurityLogger`: Terminal log akışı, canlı arama, CSV dışa aktarımı ve masaüstü bildirimleri.
+- `AttackSimulator`: Simülasyon buton etkileşimleri.
+- `App`: Sınıflar arası veri akışını yöneten ana orkestratör.
 
 ---
 
 ## 🎨 Dinamik Renk Temaları
 
-İnceleyenlerin göz konforuna uygun 3 farklı canlı tema seçeneği sunulmuştur:
 - 🟠 **Amber & Navy:** Sıcak altın amber ve derin denizci lacivert.
 - 🍑 **Midnight & Peach:** Gece indigo fon üzerine sıcak şeftali vurgular.
 - 🔵 **Kurumsal Koyu:** Modern SaaS mavi/gri tonları.
