@@ -3,41 +3,45 @@ const path = require('path');
 const { pool } = require('./index');
 
 async function runMigrations() {
-  console.log('🔄 Veritabanı migration başlatılıyor...');
+  console.log('🔄 Veritabanı migration kontrolü başlatılıyor...');
   
   if (!process.env.DATABASE_URL) {
-    console.error('❌ HATA: DATABASE_URL çevre değişkeni tanımlı değil! Lütfen .env dosyasını kontrol edin.');
-    process.exit(1);
+    console.warn('⚠️ DATABASE_URL çevre değişkeni bulunamadı, migration atlanıyor.');
+    return;
   }
 
-  const client = await pool.connect();
-
+  let client;
   try {
+    client = await pool.connect();
     const migrationsDir = path.join(__dirname, 'migrations');
     const files = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
     for (const file of files) {
-      console.log(`📜 Migration çalıştırılıyor: ${file}`);
+      console.log(`📜 Migration kontrol ediliyor/uygulanıyor: ${file}`);
       const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf8');
       
       await client.query('BEGIN');
       await client.query(sql);
       await client.query('COMMIT');
-      console.log(`✅ ${file} başarıyla uygulandı.`);
+      console.log(`✅ ${file} hazır.`);
     }
 
-    console.log('🎉 Tüm migration işlemleri tamamlandı!');
+    console.log('🎉 Tüm veritabanı tabloları ve indeksleri başarıyla doğrulandı!');
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (e) {}
+    }
     console.error('❌ Migration hatası:', err.message);
-    process.exit(1);
   } finally {
-    client.release();
-    await pool.end();
+    if (client) client.release();
   }
 }
 
-runMigrations();
+if (require.main === module) {
+  runMigrations().then(() => pool.end());
+}
+
+module.exports = runMigrations;

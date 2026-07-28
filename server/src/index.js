@@ -4,6 +4,7 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+const runMigrations = require('../db/migrate');
 const createSecurityMiddleware = require('./middleware/securityMiddleware');
 const createPerformanceAnalyzer = require('./services/performanceAnalyzer');
 const routes = require('./routes');
@@ -65,9 +66,16 @@ io.on('connection', (socket) => {
 // Start synthetic background traffic generator for performance metrics
 perfAnalyzer.startBackgroundTraffic(3000);
 
-// Start HTTP Server
+// Run DB Migrations automatically on startup then listen
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`🚀 [Monitoring Server] Running on port ${PORT}`);
-  console.log(`📡 [CORS Allowed Origin]: ${allowedOrigin}`);
-});
+
+async function startServer() {
+  await runMigrations();
+  
+  server.listen(PORT, () => {
+    console.log(`🚀 [Monitoring Server] Running on port ${PORT}`);
+    console.log(`📡 [CORS Allowed Origin]: ${allowedOrigin}`);
+  });
+}
+
+startServer();
