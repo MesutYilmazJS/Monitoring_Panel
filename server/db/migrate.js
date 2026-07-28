@@ -1,12 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const { pool } = require('./index');
+const { pool, connectionString } = require('./index');
 
 async function runMigrations() {
   console.log('🔄 Veritabanı migration kontrolü başlatılıyor...');
   
-  if (!process.env.DATABASE_URL) {
-    console.warn('⚠️ DATABASE_URL çevre değişkeni bulunamadı, migration atlanıyor.');
+  const dbUrl = connectionString || process.env.DATABASE_URL || process.env.DATABASE_PRIVATE_URL || process.env.DATABASE_PUBLIC_URL || process.env.POSTGRES_URL;
+
+  if (!dbUrl) {
+    console.warn('⚠️ DATABASE_URL veya alternatif veritabanı değişkeni bulunamadı, migration atlanıyor.');
+    console.warn('💡 İpucu: Railway servisinizin Variables sekmesinde DATABASE_URL eklediğinizden emin olun.');
     return;
   }
 
