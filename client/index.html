@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark h-full bg-slate-950 text-slate-100">
+<html lang="tr" class="h-full theme-amber-navy">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Canlı Güvenlik ve Performans Monitörü</title>
+  <title>Güvenlik ve Performans İzleme Paneli</title>
   
   <!-- Google Fonts: Inter & Fira Code -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
             mono: ['Fira Code', 'monospace']
           }
         }
@@ -26,181 +26,370 @@
     }
   </script>
   
-  <!-- Chart.js CDN -->
+  <!-- Chart.js & Socket.io CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- Socket.io Client CDN -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
+  <!-- THEME PALETTES & SIDEBAR LAYOUT STYLES -->
   <style>
-    /* Custom Scrollbar for Hacker Terminal */
+    /* Theme 1: Amber & Coral Navy (#e08f2c, #ea8d89, #dddddc, #223f5c) */
+    .theme-amber-navy {
+      --bg-base: #0f1c2b;
+      --bg-sidebar: #142538;
+      --bg-card: #1b334d;
+      --bg-header: #142538;
+      --accent-primary: #e08f2c;
+      --accent-secondary: #ea8d89;
+      --text-main: #dddddc;
+      --text-muted: #8ca3bc;
+      --border-color: rgba(224, 143, 44, 0.2);
+    }
+
+    /* Theme 2: Midnight & Peach Indigo (#09092d, #f2f1ed, #393781, #f4bba4) */
+    .theme-midnight-peach {
+      --bg-base: #060621;
+      --bg-sidebar: #0e0d3d;
+      --bg-card: #1b1959;
+      --bg-header: #0e0d3d;
+      --accent-primary: #f4bba4;
+      --accent-secondary: #8b89e6;
+      --text-main: #f2f1ed;
+      --text-muted: #9b98d9;
+      --border-color: rgba(244, 187, 164, 0.2);
+    }
+
+    /* Theme 3: Modern Corporate Dark */
+    .theme-cyber {
+      --bg-base: #0B0F19;
+      --bg-sidebar: #111827;
+      --bg-card: #1F2937;
+      --bg-header: #111827;
+      --accent-primary: #38BDF8;
+      --accent-secondary: #34D399;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --border-color: rgba(56, 189, 248, 0.2);
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    .themed-sidebar {
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+    }
+
+    .themed-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .themed-card:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .themed-header {
+      background-color: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .themed-accent-text {
+      color: var(--accent-primary);
+    }
+
+    .themed-accent-bg {
+      background-color: var(--accent-primary);
+    }
+
+    /* Custom scrollbar */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: #090d16;
+      background: rgba(0, 0, 0, 0.15);
     }
     ::-webkit-scrollbar-thumb {
-      background: #1f293d;
+      background: var(--border-color);
       border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #374151;
     }
   </style>
 
-  <!-- CANLI BACKEND URL YAPILANDIRMASI (Railway URL'nizi buraya yazın) -->
+  <!-- CANLI BACKEND URL YAPILANDIRMASI -->
   <script>
-    // Railway panelinizden aldığınız canlı backend adresini buraya yapıştırın:
-    // Örn: window.BACKEND_URL = 'https://monitoringpanel-production.up.railway.app';
     window.BACKEND_URL = 'https://monitoringpanel-production.up.railway.app';
   </script>
 </head>
-<body class="h-full font-sans bg-[#0B0F19] text-gray-100 antialiased flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+<body class="h-full font-sans antialiased flex overflow-hidden">
 
-  <!-- TOP HEADER BAR -->
-  <header class="border-b border-gray-800/80 bg-[#0F172A]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between shadow-lg">
-    <div class="flex items-center gap-3">
-      <div class="p-2 rounded-lg bg-emerald-950/70 border border-emerald-500/30 text-emerald-400">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-          SEC-PERF <span class="text-emerald-400 font-mono text-xs font-normal px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60">v1.0.0</span>
-        </h1>
-        <p class="text-xs text-gray-400">Gerçek Zamanlı Güvenlik &amp; Performans İzleme Paneli</p>
-      </div>
-    </div>
-
-    <!-- Right Status Badges -->
-    <div class="flex items-center gap-4">
-      <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900 border border-gray-800">
-        <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-        <span id="status-text" class="text-xs font-mono font-bold text-gray-400">CONNECTING...</span>
-      </div>
-      <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-gray-400 bg-gray-900/60 px-3 py-1 rounded-md border border-gray-800/60">
-        <span class="text-emerald-400">HOST:</span> <span id="host-label">localhost:3001</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- MAIN DASHBOARD CONTENT -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- LEFT COLUMN: STAT CARDS & LIVE LATENCY CHART (8 cols) -->
-    <section class="lg:col-span-7 flex flex-col gap-6">
+  <!-- ==================== SOL MENÜ (LEFT SIDEBAR) ==================== -->
+  <aside class="themed-sidebar w-64 flex-shrink-0 hidden md:flex flex-col justify-between p-5 z-20">
+    
+    <!-- Top Section: Brand & Nav Links -->
+    <div class="space-y-6">
       
-      <!-- STAT CARDS ROW -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <!-- Current Latency -->
-        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
-          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Son Gecikme</span>
-          <div id="stat-current-latency" class="text-xl font-bold font-mono text-emerald-400 mt-1">-- ms</div>
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 pb-5 border-b border-white/10 cursor-pointer" onclick="scrollToSection('dashboard', document.querySelector('.nav-link'))">
+        <div class="w-9 h-9 rounded-lg bg-black/30 border border-white/10 flex items-center justify-center themed-accent-text font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
         </div>
-
-        <!-- Average Latency -->
-        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
-          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Ort. Gecikme</span>
-          <div id="stat-avg-latency" class="text-xl font-bold font-mono text-cyan-400 mt-1">-- ms</div>
-        </div>
-
-        <!-- Peak Latency -->
-        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
-          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Zirve Gecikme</span>
-          <div id="stat-max-latency" class="text-xl font-bold font-mono text-amber-400 mt-1">-- ms</div>
-        </div>
-
-        <!-- Total Threats Detected -->
-        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
-          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Tehdit Sayısı</span>
-          <div id="stat-threat-count" class="text-xl font-bold font-mono text-red-400 mt-1">0</div>
+        <div>
+          <h1 class="font-bold text-sm text-white tracking-wide">SEC-PERF</h1>
+          <p class="text-[11px] text-gray-400">Sistem İzleme Paneli</p>
         </div>
       </div>
 
-      <!-- LIVE CHART CONTAINER CARD -->
-      <div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col flex-1 min-h-[340px]">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800/80">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <h2 class="text-sm font-bold tracking-wide text-gray-200 uppercase font-mono">Canlı Yanıt Süresi (Latency Chart)</h2>
-          </div>
-          <span class="text-xs font-mono text-gray-400">Son 30 İletim</span>
-        </div>
-        <div class="relative flex-1 w-full min-h-[260px]">
-          <canvas id="latencyChart"></canvas>
+      <!-- Navigation Links (Functional Smooth Scrolling & Active State) -->
+      <nav class="space-y-1 text-xs">
+        <button onclick="scrollToSection('dashboard', this)" class="nav-link w-full flex items-center justify-between px-3 py-2.5 rounded-md bg-black/20 themed-accent-text font-semibold border border-white/10 text-left transition-colors">
+          <span>Canlı Kontrol Paneli</span>
+          <span class="w-2 h-2 rounded-full themed-accent-bg"></span>
+        </button>
+        <button onclick="scrollToSection('terminal-logs-section', this)" class="nav-link w-full flex items-center justify-between px-3 py-2.5 rounded-md text-gray-300 hover:bg-white/5 transition-colors text-left">
+          <span>Güvenlik Log Akışı</span>
+          <span class="text-[10px] font-mono text-gray-400">LIVE</span>
+        </button>
+        <button onclick="scrollToSection('simulator', this)" class="nav-link w-full flex items-center justify-between px-3 py-2.5 rounded-md text-gray-300 hover:bg-white/5 transition-colors text-left">
+          <span>Saldırı Simülatörü</span>
+          <span class="text-[10px] font-mono text-gray-400">TEST</span>
+        </button>
+      </nav>
+
+      <!-- Technical Architecture Card in Left Menu -->
+      <div class="p-3 rounded-md bg-black/20 border border-white/5 space-y-2 text-[11px]">
+        <div class="font-semibold text-gray-300 border-b border-white/10 pb-1">Teknik Mimarı Özeti</div>
+        <div class="space-y-1 text-gray-400">
+          <div><strong class="text-gray-200">Frontend:</strong> Vanilla JS (OOP)</div>
+          <div><strong class="text-gray-200">Backend:</strong> Node.js, Express</div>
+          <div><strong class="text-gray-200">Canlı Akış:</strong> Socket.io WS</div>
+          <div><strong class="text-gray-200">Veritabanı:</strong> PostgreSQL</div>
         </div>
       </div>
 
-    </section>
+    </div>
 
-    <!-- RIGHT COLUMN: CYBERPUNK SECURITY TERMINAL FEED (5 cols) -->
-    <section class="lg:col-span-5 flex flex-col">
-      <div class="bg-gray-950/90 border border-gray-800 rounded-xl shadow-2xl flex flex-col h-full min-h-[460px] overflow-hidden">
+    <!-- Bottom Section: Theme Switcher in Left Menu -->
+    <div class="pt-4 border-t border-white/10 space-y-2">
+      <span class="text-[11px] font-medium text-gray-400 block uppercase tracking-wider">Tema Seçimi</span>
+      <div class="grid grid-cols-1 gap-1.5 text-xs">
+        <button onclick="setTheme('theme-amber-navy')" id="btn-theme-amber-navy" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
+          <span>Amber &amp; Navy</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#e08f2c]"></span>
+        </button>
+        <button onclick="setTheme('theme-midnight-peach')" id="btn-theme-midnight-peach" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
+          <span>Midnight &amp; Peach</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#f4bba4]"></span>
+        </button>
+        <button onclick="setTheme('theme-cyber')" id="btn-theme-cyber" class="px-2.5 py-1.5 rounded text-left transition-colors font-medium hover:bg-white/10 flex items-center justify-between">
+          <span>Kurumsal Koyu</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#38BDF8]"></span>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ==================== SAĞ KISIM (HEADER & ORTA ALAN) ==================== -->
+  <div id="main-scroll-container" class="flex-1 flex flex-col h-full overflow-y-auto">
+    
+    <!-- TOP HEADER -->
+    <header class="themed-header sticky top-0 z-10 px-6 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      
+      <!-- Page Title -->
+      <div>
+        <h2 class="text-base font-bold text-white tracking-tight">Sistem Genel Bakış ve Canlı İzleme</h2>
+        <p class="text-xs text-gray-300">Güvenlik ihlallerini ve yanıt sürelerini anlık takip edin.</p>
+      </div>
+
+      <!-- System Connection Badges -->
+      <div class="flex items-center gap-3">
+        <!-- Socket Status -->
+        <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded bg-black/30 border border-white/10 text-xs font-mono">
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span id="status-text" class="text-gray-300 font-medium">Bağlanıyor...</span>
+        </div>
+
+        <!-- Node Host info -->
+        <div class="hidden sm:block text-xs font-mono text-gray-300 bg-black/30 px-3 py-1 rounded border border-white/10">
+          <span class="themed-accent-text font-medium">Sunucu:</span> <span id="host-label">localhost:3001</span>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- CENTER MAIN CANVAS (METRICS, CHART, LOGS, SIMULATOR) -->
+    <main id="dashboard" class="flex-1 p-6 space-y-6 max-w-[1600px] w-full mx-auto">
+      
+      <!-- TOP 4 METRIC CARDS STRIP -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <!-- Terminal Header -->
-        <div class="bg-gray-900/90 px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1.5">
-              <span class="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
-              <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-              <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+        <!-- Metric 1: Current Latency -->
+        <div class="themed-card rounded-lg p-4 shadow-sm">
+          <div class="text-xs font-medium text-gray-400 uppercase tracking-wider">Son Yanıt Süresi</div>
+          <div id="stat-current-latency" class="text-2xl font-bold font-mono themed-accent-text mt-1">-- ms</div>
+          <p class="text-[11px] text-gray-400 mt-1">Son isteğin işlenme süresi</p>
+        </div>
+
+        <!-- Metric 2: Average Latency -->
+        <div class="themed-card rounded-lg p-4 shadow-sm">
+          <div class="text-xs font-medium text-gray-400 uppercase tracking-wider">Ortalama Gecikme</div>
+          <div id="stat-avg-latency" class="text-2xl font-bold font-mono text-cyan-300 mt-1">-- ms</div>
+          <p class="text-[11px] text-gray-400 mt-1">Son ölçümler ortalaması</p>
+        </div>
+
+        <!-- Metric 3: Peak Latency -->
+        <div class="themed-card rounded-lg p-4 shadow-sm">
+          <div class="text-xs font-medium text-gray-400 uppercase tracking-wider">Zirve Gecikme</div>
+          <div id="stat-max-latency" class="text-2xl font-bold font-mono text-amber-300 mt-1">-- ms</div>
+          <p class="text-[11px] text-gray-400 mt-1">Maksimum sistem sıçraması</p>
+        </div>
+
+        <!-- Metric 4: Total Threats -->
+        <div class="themed-card rounded-lg p-4 shadow-sm">
+          <div class="text-xs font-medium text-gray-400 uppercase tracking-wider">Engellenen İhlal</div>
+          <div id="stat-threat-count" class="text-2xl font-bold font-mono text-red-400 mt-1">0</div>
+          <p class="text-[11px] text-gray-400 mt-1">Yakalanan SQLi / IDOR</p>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE SECTION: CHART (LEFT 60%) + SECURITY TERMINAL (RIGHT 40%) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- MAIN LATENCY CHART (7 Cols) -->
+        <div class="lg:col-span-7 themed-card rounded-lg p-5 flex flex-col min-h-[380px]">
+          <div class="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+                Canlı Sistem Yanıt Süresi Grafiği (Latency)
+              </h3>
+              <p class="text-xs text-gray-300 mt-0.5">300 ms üzerindeki değerler yüksek gecikmeyi gösterir.</p>
             </div>
-            <span class="text-xs font-mono font-bold text-gray-300 ml-2">SECURITY_ALERTS.LOG</span>
+            <span class="text-xs font-mono text-gray-400 bg-black/20 px-2.5 py-1 rounded border border-white/10">
+              Canlı (30 İletim)
+            </span>
           </div>
-          <span class="text-[11px] font-mono text-red-400 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/60">LIVE FEED</span>
+
+          <div class="relative flex-1 w-full min-h-[290px]">
+            <canvas id="latencyChart"></canvas>
+          </div>
         </div>
 
-        <!-- Terminal Logs Scrolling Area -->
-        <div id="terminal-logs" class="flex-1 p-3.5 space-y-2.5 overflow-y-auto max-h-[500px] font-mono">
-          <!-- Logs dynamically injected here by SecurityLogger.js -->
-          <div class="text-xs text-gray-400 italic text-center py-8">
-            Güvenlik dinleyicisi aktif. Olası SQLi/IDOR ihlalleri burada canlı görüntülenecektir...
+        <!-- SECURITY LOG TERMINAL (5 Cols) -->
+        <div id="terminal-logs-section" class="lg:col-span-5 themed-card rounded-lg flex flex-col min-h-[380px] overflow-hidden">
+          <div class="bg-black/30 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-gray-200 font-mono">GÜVENLİK ALARMLARI LOG AKIŞI</h3>
+              <p class="text-[11px] text-gray-400">Security Middleware Bildirimleri</p>
+            </div>
+            <span class="text-[10px] font-mono text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800/60 font-semibold">
+              CANLI DİNLEME
+            </span>
+          </div>
+
+          <div id="terminal-logs" class="flex-1 p-3.5 space-y-2.5 overflow-y-auto max-h-[320px] font-mono text-xs">
+            <div class="text-xs text-gray-400 italic text-center py-16">
+              Güvenlik dinleyicisi aktif. İhlal denemeleri burada görüntülenecektir...
+            </div>
           </div>
         </div>
 
       </div>
-    </section>
 
-    <!-- BOTTOM ROW: ATTACK SIMULATION CONSOLE (12 cols) -->
-    <section class="lg:col-span-12">
-      <div class="bg-gray-900/70 border border-gray-800 rounded-xl p-5 shadow-xl">
-        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/80">
-          <span class="text-amber-400">⚡</span>
-          <h2 class="text-sm font-bold tracking-wide text-gray-200 uppercase font-mono">Saldırı ve Performans Simülatör Konsolu</h2>
+      <!-- BOTTOM SECTION: ATTACK SIMULATION CONSOLE -->
+      <div id="simulator" class="themed-card rounded-lg p-5">
+        <div class="mb-4 pb-3 border-b border-white/10">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+            Güvenlik ve Performans Simülasyon Test Paneli
+          </h3>
+          <p class="text-xs text-gray-300 mt-0.5">
+            Aşağıdaki butonlara basarak sunucudaki güvenlik duvarını ve performans takipçisini test edebilirsiniz.
+          </p>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- SQLi Attack Trigger -->
-          <button id="btn-sim-sqli" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-200 font-mono text-xs font-bold border border-red-800/80 transition-all shadow-lg active:scale-95 group">
-            <span>💥</span>
-            <span class="btn-label">SQL Injection Saldırısı</span>
+          
+          <!-- SQLi Test Button -->
+          <button id="btn-sim-sqli" class="flex flex-col text-left p-4 rounded-md bg-red-950/40 hover:bg-red-950/70 border border-red-800/60 transition-colors group">
+            <span class="btn-label font-bold text-xs text-red-200">1. SQL Injection Saldırısı Tetikle</span>
+            <span class="text-[11px] text-red-300/80 mt-1">Zararlı SQL sorgusu gönderir. Güvenlik duvarı 403 ile engeller.</span>
           </button>
 
-          <!-- IDOR Probe Trigger -->
-          <button id="btn-sim-idor" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-950/70 hover:bg-amber-900 text-amber-200 font-mono text-xs font-bold border border-amber-800/80 transition-all shadow-lg active:scale-95 group">
-            <span>🛡️</span>
-            <span class="btn-label">IDOR Yetki İhlali</span>
+          <!-- IDOR Test Button -->
+          <button id="btn-sim-idor" class="flex flex-col text-left p-4 rounded-md bg-amber-950/40 hover:bg-amber-950/70 border border-amber-800/60 transition-colors group">
+            <span class="btn-label font-bold text-xs text-amber-200">2. IDOR Yetki İhlali Tetikle</span>
+            <span class="text-[11px] text-amber-300/80 mt-1">Yetkisiz ID erişim denemesi simüle eder ve kaydeder.</span>
           </button>
 
-          <!-- Latency Spike Trigger -->
-          <button id="btn-sim-latency" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 text-cyan-200 font-mono text-xs font-bold border border-cyan-800/80 transition-all shadow-lg active:scale-95 group">
-            <span>⏱️</span>
-            <span class="btn-label">Performans Darboğazı</span>
+          <!-- Latency Spike Test Button -->
+          <button id="btn-sim-latency" class="flex flex-col text-left p-4 rounded-md bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-800/60 transition-colors group">
+            <span class="btn-label font-bold text-xs text-cyan-200">3. Performans Gecikmesi Tetikle</span>
+            <span class="text-[11px] text-cyan-300/80 mt-1">2 saniyelik yapay darboğaz yaratır, grafikte izleyebilirsiniz.</span>
           </button>
+
         </div>
       </div>
-    </section>
 
-  </main>
+    </main>
 
-  <!-- FOOTER -->
-  <footer class="border-t border-gray-900 bg-[#0B0F19] py-3 text-center text-xs font-mono text-gray-400">
-    Monitoring Panel © 2026 — Built with Vanilla JS (OOP), Tailwind CSS, Socket.io &amp; PostgreSQL
-  </footer>
+    <!-- FOOTER -->
+    <footer class="border-t border-white/10 bg-black/20 py-3 text-center text-xs font-mono text-gray-400">
+      Canlı Güvenlik ve Performans Monitörü © 2026 — Node.js, Socket.io, PostgreSQL &amp; Vanilla JS
+    </footer>
 
-  <!-- OOP MODULE SCRIPTS (Strict load order) -->
+  </div>
+
+  <!-- NAVIGATION & THEME SCRIPT -->
+  <script>
+    function scrollToSection(sectionId, linkEl) {
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      document.querySelectorAll('.nav-link').forEach(el => {
+        el.classList.remove('bg-black/20', 'themed-accent-text', 'font-semibold', 'border', 'border-white/10');
+        el.classList.add('text-gray-300');
+      });
+
+      if (linkEl) {
+        linkEl.classList.add('bg-black/20', 'themed-accent-text', 'font-semibold', 'border', 'border-white/10');
+        linkEl.classList.remove('text-gray-300');
+      }
+    }
+
+    function setTheme(themeName) {
+      document.documentElement.className = 'h-full ' + themeName;
+      localStorage.setItem('selected_theme', themeName);
+
+      ['theme-amber-navy', 'theme-midnight-peach', 'theme-cyber'].forEach(t => {
+        const btn = document.getElementById('btn-' + t);
+        if (btn) {
+          if (t === themeName) {
+            btn.classList.add('bg-white/20', 'font-bold');
+          } else {
+            btn.classList.remove('bg-white/20', 'font-bold');
+          }
+        }
+      });
+
+      if (window.app && window.app.chartController) {
+        window.app.chartController.updateTheme();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('selected_theme') || 'theme-amber-navy';
+      setTheme(savedTheme);
+    });
+  </script>
+
+  <!-- OOP MODULE SCRIPTS -->
   <script src="./js/SocketManager.js"></script>
   <script src="./js/ChartController.js"></script>
   <script src="./js/SecurityLogger.js"></script>

@@ -8,6 +8,7 @@ class ChartController {
     this.maxPoints = maxPoints;
     this.chart = null;
     this.metricsHistory = [];
+    this.primaryColor = '#10B981';
   }
 
   /**
@@ -21,11 +22,12 @@ class ChartController {
     }
 
     const ctx = canvas.getContext('2d');
+    this.primaryColor = this._getThemePrimaryColor();
 
     // Create glowing neon gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)'); // Neon Emerald
-    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    gradient.addColorStop(0, this._hexToRgba(this.primaryColor, 0.35));
+    gradient.addColorStop(1, this._hexToRgba(this.primaryColor, 0.0));
 
     this.chart = new Chart(ctx, {
       type: 'line',
@@ -34,15 +36,15 @@ class ChartController {
         datasets: [{
           label: 'Gecikme (ms)',
           data: [],
-          borderColor: '#10B981', // Emerald Neon
-          borderWidth: 2,
+          borderColor: this.primaryColor,
+          borderWidth: 2.5,
           backgroundColor: gradient,
           fill: true,
           tension: 0.35,
           pointRadius: 3,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#10B981',
-          pointBorderColor: '#064E3B'
+          pointBackgroundColor: this.primaryColor,
+          pointBorderColor: '#000000'
         }]
       },
       options: {
@@ -52,21 +54,21 @@ class ChartController {
         scales: {
           x: {
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { color: '#9CA3AF', font: { family: 'Fira Code, monospace', size: 10 } }
+            ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { family: 'Fira Code, monospace', size: 10 } }
           },
           y: {
             beginAtZero: true,
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { color: '#9CA3AF', font: { family: 'Fira Code, monospace', size: 10 } }
+            ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { family: 'Fira Code, monospace', size: 10 } }
           }
         },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#111827',
-            titleColor: '#10B981',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleColor: this.primaryColor,
             bodyColor: '#F3F4F6',
-            borderColor: '#374151',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
             borderWidth: 1,
             displayColors: false,
             callbacks: {
@@ -99,11 +101,15 @@ class ChartController {
       this.chart.data.datasets[0].data.shift();
     }
 
+    const currentPrimary = this._getThemePrimaryColor();
+
     // Color spike if latency > 300ms
     if (latency > 300) {
       this.chart.data.datasets[0].borderColor = '#EF4444'; // Red alert for latency spikes
+      this.chart.data.datasets[0].pointBackgroundColor = '#EF4444';
     } else {
-      this.chart.data.datasets[0].borderColor = '#10B981'; // Green normal
+      this.chart.data.datasets[0].borderColor = currentPrimary;
+      this.chart.data.datasets[0].pointBackgroundColor = currentPrimary;
     }
 
     this.chart.data.labels.push(timeLabel);
@@ -111,6 +117,27 @@ class ChartController {
 
     this.chart.update('none'); // Silent fast update
     this._updateStatsUI();
+  }
+
+  /**
+   * Re-theme chart when theme changes
+   */
+  updateTheme() {
+    if (!this.chart) return;
+    const canvas = document.getElementById(this.canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    this.primaryColor = this._getThemePrimaryColor();
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, this._hexToRgba(this.primaryColor, 0.35));
+    gradient.addColorStop(1, this._hexToRgba(this.primaryColor, 0.0));
+
+    this.chart.data.datasets[0].borderColor = this.primaryColor;
+    this.chart.data.datasets[0].pointBackgroundColor = this.primaryColor;
+    this.chart.data.datasets[0].backgroundColor = gradient;
+    this.chart.options.plugins.tooltip.titleColor = this.primaryColor;
+    this.chart.update();
   }
 
   /**
@@ -138,5 +165,18 @@ class ChartController {
     if (currentEl) currentEl.textContent = `${lastLatency} ms`;
     if (avgEl) avgEl.textContent = `${avgLatency} ms`;
     if (maxEl) maxEl.textContent = `${maxLatency} ms`;
+  }
+
+  _getThemePrimaryColor() {
+    const style = getComputedStyle(document.documentElement);
+    const color = style.getPropertyValue('--accent-primary').trim();
+    return color || '#10B981';
+  }
+
+  _hexToRgba(hex, alpha = 1) {
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
   }
 }
