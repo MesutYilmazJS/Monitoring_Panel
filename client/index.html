@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canlı Güvenlik ve Performans Monitörü</title>
+  
+  <!-- Google Fonts: Inter & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Socket.io Client CDN -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar for Hacker Terminal */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f293d;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+  </style>
+</head>
+<body class="h-full font-sans bg-[#0B0F19] text-gray-100 antialiased flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+
+  <!-- TOP HEADER BAR -->
+  <header class="border-b border-gray-800/80 bg-[#0F172A]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="p-2 rounded-lg bg-emerald-950/70 border border-emerald-500/30 text-emerald-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          SEC-PERF <span class="text-emerald-400 font-mono text-xs font-normal px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60">v1.0.0</span>
+        </h1>
+        <p class="text-xs text-gray-400">Gerçek Zamanlı Güvenlik &amp; Performans İzleme Paneli</p>
+      </div>
+    </div>
+
+    <!-- Right Status Badges -->
+    <div class="flex items-center gap-4">
+      <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900 border border-gray-800">
+        <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+        <span id="status-text" class="text-xs font-mono font-bold text-gray-400">CONNECTING...</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-gray-400 bg-gray-900/60 px-3 py-1 rounded-md border border-gray-800/60">
+        <span class="text-emerald-400">HOST:</span> localhost:3001
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: STAT CARDS & LIVE LATENCY CHART (8 cols) -->
+    <section class="lg:col-span-7 flex flex-col gap-6">
+      
+      <!-- STAT CARDS ROW -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Current Latency -->
+        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
+          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Son Gecikme</span>
+          <div id="stat-current-latency" class="text-xl font-bold font-mono text-emerald-400 mt-1">-- ms</div>
+        </div>
+
+        <!-- Average Latency -->
+        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
+          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Ort. Gecikme</span>
+          <div id="stat-avg-latency" class="text-xl font-bold font-mono text-cyan-400 mt-1">-- ms</div>
+        </div>
+
+        <!-- Peak Latency -->
+        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
+          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Zirve Gecikme</span>
+          <div id="stat-max-latency" class="text-xl font-bold font-mono text-amber-400 mt-1">-- ms</div>
+        </div>
+
+        <!-- Total Threats Detected -->
+        <div class="bg-gray-900/70 border border-gray-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-md">
+          <span class="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Tehdit Sayısı</span>
+          <div id="stat-threat-count" class="text-xl font-bold font-mono text-red-400 mt-1">0</div>
+        </div>
+      </div>
+
+      <!-- LIVE CHART CONTAINER CARD -->
+      <div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col flex-1 min-h-[340px]">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800/80">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-sm font-bold tracking-wide text-gray-200 uppercase font-mono">Canlı Yanıt Süresi (Latency Chart)</h2>
+          </div>
+          <span class="text-xs font-mono text-gray-400">Son 30 İletim</span>
+        </div>
+        <div class="relative flex-1 w-full min-h-[260px]">
+          <canvas id="latencyChart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: CYBERPUNK SECURITY TERMINAL FEED (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col">
+      <div class="bg-gray-950/90 border border-gray-800 rounded-xl shadow-2xl flex flex-col h-full min-h-[460px] overflow-hidden">
+        
+        <!-- Terminal Header -->
+        <div class="bg-gray-900/90 px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="flex gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            </div>
+            <span class="text-xs font-mono font-bold text-gray-300 ml-2">SECURITY_ALERTS.LOG</span>
+          </div>
+          <span class="text-[11px] font-mono text-red-400 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/60">LIVE FEED</span>
+        </div>
+
+        <!-- Terminal Logs Scrolling Area -->
+        <div id="terminal-logs" class="flex-1 p-3.5 space-y-2.5 overflow-y-auto max-h-[500px] font-mono">
+          <!-- Logs dynamically injected here by SecurityLogger.js -->
+          <div class="text-xs text-gray-400 italic text-center py-8">
+            Güvenlik dinleyicisi aktif. Olası SQLi/IDOR ihlalleri burada canlı görüntülenecektir...
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- BOTTOM ROW: ATTACK SIMULATION CONSOLE (12 cols) -->
+    <section class="lg:col-span-12">
+      <div class="bg-gray-900/70 border border-gray-800 rounded-xl p-5 shadow-xl">
+        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/80">
+          <span class="text-amber-400">⚡</span>
+          <h2 class="text-sm font-bold tracking-wide text-gray-200 uppercase font-mono">Saldırı ve Performans Simülatör Konsolu</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- SQLi Attack Trigger -->
+          <button id="btn-sim-sqli" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-200 font-mono text-xs font-bold border border-red-800/80 transition-all shadow-lg active:scale-95 group">
+            <span>💥</span>
+            <span class="btn-label">SQL Injection Saldırısı</span>
+          </button>
+
+          <!-- IDOR Probe Trigger -->
+          <button id="btn-sim-idor" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-950/70 hover:bg-amber-900 text-amber-200 font-mono text-xs font-bold border border-amber-800/80 transition-all shadow-lg active:scale-95 group">
+            <span>🛡️</span>
+            <span class="btn-label">IDOR Yetki İhlali</span>
+          </button>
+
+          <!-- Latency Spike Trigger -->
+          <button id="btn-sim-latency" class="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 text-cyan-200 font-mono text-xs font-bold border border-cyan-800/80 transition-all shadow-lg active:scale-95 group">
+            <span>⏱️</span>
+            <span class="btn-label">Performans Darboğazı</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-gray-900 bg-[#0B0F19] py-3 text-center text-xs font-mono text-gray-400">
+    Monitoring Panel © 2026 — Built with Vanilla JS (OOP), Tailwind CSS, Socket.io &amp; PostgreSQL
+  </footer>
+
+  <!-- OOP MODULE SCRIPTS (Strict load order) -->
+  <script src="./js/SocketManager.js"></script>
+  <script src="./js/ChartController.js"></script>
+  <script src="./js/SecurityLogger.js"></script>
+  <script src="./js/AttackSimulator.js"></script>
+  <script src="./js/app.js"></script>
+
+</body>
+</html>

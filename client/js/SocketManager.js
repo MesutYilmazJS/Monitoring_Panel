@@ -1,0 +1,73 @@
+/**
+ * SocketManager Class
+ * Encapsulates Socket.io client connection lifecycle and real-time event subscriptions.
+ */
+class SocketManager {
+  constructor(serverUrl) {
+    this.serverUrl = serverUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+    this.socket = null;
+    this.callbacks = {
+      onConnect: null,
+      onDisconnect: null,
+      onSecurityAlert: null,
+      onPerformanceMetric: null
+    };
+  }
+
+  /**
+   * Initializes Socket.io connection
+   */
+  connect() {
+    if (typeof io === 'undefined') {
+      console.error('❌ Socket.io client library not loaded!');
+      return;
+    }
+
+    console.log(`🔌 Connecting to Socket.io server at: ${this.serverUrl}`);
+    this.socket = io(this.serverUrl, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000
+    });
+
+    this._bindEvents();
+  }
+
+  /**
+   * Private method to bind socket listeners
+   */
+  _bindEvents() {
+    this.socket.on('connect', () => {
+      console.log(`✅ [SocketManager] Connected to server (ID: ${this.socket.id})`);
+      if (this.callbacks.onConnect) this.callbacks.onConnect(this.socket.id);
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      console.warn(`⚠️ [SocketManager] Disconnected: ${reason}`);
+      if (this.callbacks.onDisconnect) this.callbacks.onDisconnect(reason);
+    });
+
+    this.socket.on('security_alert', (data) => {
+      if (this.callbacks.onSecurityAlert) this.callbacks.onSecurityAlert(data);
+    });
+
+    this.socket.on('performance_metric', (data) => {
+      if (this.callbacks.onPerformanceMetric) this.callbacks.onPerformanceMetric(data);
+    });
+  }
+
+  on(event, callback) {
+    if (event === 'connect') this.callbacks.onConnect = callback;
+    if (event === 'disconnect') this.callbacks.onDisconnect = callback;
+    if (event === 'security_alert') this.callbacks.onSecurityAlert = callback;
+    if (event === 'performance_metric') this.callbacks.onPerformanceMetric = callback;
+  }
+
+  emit(event, payload) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit(event, payload);
+    } else {
+      console.warn('⚠️ Cannot emit event: Socket not connected.');
+    }
+  }
+}
