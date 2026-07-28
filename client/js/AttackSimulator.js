@@ -48,7 +48,7 @@ class AttackSimulator {
       const maliciousPayload = encodeURIComponent("1' OR '1'='1'; DROP TABLE security_logs; --");
       await fetch(`${this.serverUrl}/api/test/sqli?q=${maliciousPayload}`);
     } catch (err) {
-      console.error('SQLi Attack Simulation Error:', err);
+      // Silent catch
     } finally {
       this._setButtonState(btnElement, false, '1. SQL Injection Saldırısı Tetikle');
     }
@@ -59,7 +59,7 @@ class AttackSimulator {
     try {
       await fetch(`${this.serverUrl}/api/test/idor?id=0&bypass=true&role=admin`);
     } catch (err) {
-      console.error('IDOR Probe Simulation Error:', err);
+      // Silent catch
     } finally {
       this._setButtonState(btnElement, false, '2. IDOR Yetki İhlali Tetikle');
     }
@@ -71,7 +71,7 @@ class AttackSimulator {
       const xssPayload = encodeURIComponent("<script>alert(document.cookie)</script>");
       await fetch(`${this.serverUrl}/api/test/xss?comment=${xssPayload}`);
     } catch (err) {
-      console.error('XSS Attack Simulation Error:', err);
+      // Silent catch
     } finally {
       this._setButtonState(btnElement, false, '3. XSS Saldırısı Tetikle');
     }
@@ -82,7 +82,7 @@ class AttackSimulator {
     try {
       await fetch(`${this.serverUrl}/api/test/latency?delay=2000`);
     } catch (err) {
-      console.error('Latency Spike Simulation Error:', err);
+      // Silent catch
     } finally {
       this._setButtonState(btnElement, false, '4. Performans Gecikmesi Tetikle');
     }

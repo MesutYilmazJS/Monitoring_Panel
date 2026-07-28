@@ -15,9 +15,7 @@ class SecurityLogger {
 
   init() {
     this.container = document.getElementById(this.containerId);
-    if (!this.container) {
-      console.error(`❌ Terminal container #${this.containerId} not found!`);
-    }
+    if (!this.container) return;
 
     this._bindFilterEvents();
     this._checkNotificationPermission();

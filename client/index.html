@@ -460,9 +460,7 @@
 
     function toggleBrowserFullscreen() {
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-          console.warn('Fullscreen request failed:', err.message);
-        });
+        document.documentElement.requestFullscreen().catch(() => {});
       } else {
         if (document.exitFullscreen) {
           document.exitFullscreen();

@@ -16,10 +16,7 @@ class ChartController {
    */
   init() {
     const canvas = document.getElementById(this.canvasId);
-    if (!canvas) {
-      console.error(`❌ Canvas element #${this.canvasId} not found!`);
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     this.primaryColor = this._getThemePrimaryColor();

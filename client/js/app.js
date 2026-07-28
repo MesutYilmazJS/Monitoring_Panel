@@ -14,8 +14,6 @@ class App {
       serverUrl = serverUrl.slice(0, -1);
     }
 
-    console.log(`📡 [App Config] Connecting to Backend URL: ${serverUrl || 'Relative Host'}`);
-
     this.serverUrl = serverUrl;
     this.socketManager = new SocketManager(serverUrl);
     this.chartController = new ChartController('latencyChart', 30);
@@ -28,8 +26,6 @@ class App {
    * Initializes all application modules and establishes event bindings
    */
   async init() {
-    console.log('🚀 Initializing Monitoring Panel Application...');
-
     // Update Host Label in Header UI if backend URL is configured
     this._updateHostUI();
 
@@ -52,25 +48,23 @@ class App {
    */
   async _fetchInitialData() {
     try {
-      // Fetch recent metrics
       const metricsRes = await fetch(`${this.serverUrl}/api/metrics`);
       if (metricsRes.ok) {
         const metrics = await metricsRes.json();
         this.chartController.loadInitialMetrics(metrics);
       }
     } catch (err) {
-      console.warn('⚠️ Could not fetch initial metrics from API:', err.message);
+      // Silent catch
     }
 
     try {
-      // Fetch recent logs
       const logsRes = await fetch(`${this.serverUrl}/api/logs`);
       if (logsRes.ok) {
         const logs = await logsRes.json();
         this.securityLogger.loadInitialLogs(logs);
       }
     } catch (err) {
-      console.warn('⚠️ Could not fetch initial security logs from API:', err.message);
+      // Silent catch
     }
   }
 
@@ -78,7 +72,6 @@ class App {
    * Routes socket events to respective controllers
    */
   _setupSocketListeners() {
-    // Socket Connection Status Updates UI
     this.socketManager.on('connect', () => {
       this._updateConnectionBadge(true);
     });
@@ -87,17 +80,14 @@ class App {
       this._updateConnectionBadge(false);
     });
 
-    // Real-time Performance Metric -> Route to ChartController
     this.socketManager.on('performance_metric', (metric) => {
       this.chartController.addMetric(metric);
     });
 
-    // Real-time Security Alert -> Route to SecurityLogger
     this.socketManager.on('security_alert', (alert) => {
       this.securityLogger.logAlert(alert);
     });
 
-    // Real-time Server System Telemetry (RAM & Active Clients)
     this.socketManager.on('system_telemetry', (telemetry) => {
       this._updateTelemetryUI(telemetry);
     });

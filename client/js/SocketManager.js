@@ -19,12 +19,8 @@ class SocketManager {
    * Initializes Socket.io connection
    */
   connect() {
-    if (typeof io === 'undefined') {
-      console.error('❌ Socket.io client library not loaded!');
-      return;
-    }
+    if (typeof io === 'undefined') return;
 
-    console.log(`🔌 Connecting to Socket.io server at: ${this.serverUrl}`);
     this.socket = io(this.serverUrl, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
@@ -39,12 +35,10 @@ class SocketManager {
    */
   _bindEvents() {
     this.socket.on('connect', () => {
-      console.log(`✅ [SocketManager] Connected to server (ID: ${this.socket.id})`);
       if (this.callbacks.onConnect) this.callbacks.onConnect(this.socket.id);
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.warn(`⚠️ [SocketManager] Disconnected: ${reason}`);
       if (this.callbacks.onDisconnect) this.callbacks.onDisconnect(reason);
     });
 
@@ -72,8 +66,6 @@ class SocketManager {
   emit(event, payload) {
     if (this.socket && this.socket.connected) {
       this.socket.emit(event, payload);
-    } else {
-      console.warn('⚠️ Cannot emit event: Socket not connected.');
     }
   }
 }
