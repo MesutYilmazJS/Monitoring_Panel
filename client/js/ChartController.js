@@ -180,3 +180,78 @@ class ChartController {
     return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
   }
 }
+
+/**
+ * RamChartController Class
+ * Encapsulates live mini line chart for server RAM telemetry visualization.
+ */
+class RamChartController {
+  constructor(canvasId, maxPoints = 20) {
+    this.canvasId = canvasId;
+    this.maxPoints = maxPoints;
+    this.chart = null;
+  }
+
+  init() {
+    const canvas = document.getElementById(this.canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 100);
+    gradient.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+    gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'RAM (MB)',
+          data: [],
+          borderColor: '#38BDF8',
+          borderWidth: 2,
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          pointBackgroundColor: '#38BDF8'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 250 },
+        scales: {
+          x: { display: false },
+          y: {
+            beginAtZero: false,
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { size: 9 } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => ` RAM: ${context.parsed.y} MB`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  addRamPoint(ramMb) {
+    if (!this.chart) return;
+    const timeLabel = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    if (this.chart.data.labels.length >= this.maxPoints) {
+      this.chart.data.labels.shift();
+      this.chart.data.datasets[0].data.shift();
+    }
+
+    this.chart.data.labels.push(timeLabel);
+    this.chart.data.datasets[0].data.push(ramMb);
+    this.chart.update('none');
+  }
+}

@@ -197,17 +197,18 @@
         </button>
       </nav>
 
-      <!-- Technical Architecture Card in Left Menu -->
+      <!-- Live Server RAM Telemetry Mini Chart Card -->
       <div class="p-3 rounded-md bg-black/20 border border-white/5 space-y-2 text-[11px]">
         <div class="font-semibold text-gray-300 border-b border-white/10 pb-1 flex items-center justify-between">
-          <span>Teknik Mimari &amp; Telemetri</span>
-          <span class="w-1.5 h-1.5 rounded-full themed-accent-bg animate-pulse"></span>
+          <span>Canlı Sunucu RAM Grafiği</span>
+          <span id="stat-server-ram" class="font-mono text-cyan-300 font-bold">-- MB</span>
         </div>
-        <div class="space-y-1 text-gray-400">
-          <div><strong class="text-gray-200">Sunucu RAM:</strong> <span id="stat-server-ram" class="font-mono text-cyan-300">-- MB</span></div>
-          <div><strong class="text-gray-200">Aktif İstemci:</strong> <span id="stat-active-clients" class="font-mono text-emerald-400">1</span></div>
-          <div><strong class="text-gray-200">Backend:</strong> Node.js &amp; Express</div>
-          <div><strong class="text-gray-200">Veritabanı:</strong> PostgreSQL</div>
+        <div class="h-20 w-full relative my-1">
+          <canvas id="ramChart"></canvas>
+        </div>
+        <div class="flex items-center justify-between text-[10px] text-gray-400 font-mono pt-1 border-t border-white/5">
+          <span>Aktif İstemci: <strong id="stat-active-clients" class="text-emerald-400">1</strong></span>
+          <span>PostgreSQL &amp; Node</span>
         </div>
       </div>
 

@@ -19,6 +19,7 @@ class App {
     this.serverUrl = serverUrl;
     this.socketManager = new SocketManager(serverUrl);
     this.chartController = new ChartController('latencyChart', 30);
+    this.ramChartController = new RamChartController('ramChart', 20);
     this.securityLogger = new SecurityLogger('terminal-logs');
     this.attackSimulator = new AttackSimulator(serverUrl);
   }
@@ -34,6 +35,7 @@ class App {
 
     // 1. Initialize Components
     this.chartController.init();
+    this.ramChartController.init();
     this.securityLogger.init();
     this.attackSimulator.init();
 
@@ -127,6 +129,9 @@ class App {
 
     if (ramEl && data.memory_mb) {
       ramEl.textContent = `${data.memory_mb} MB`;
+      if (this.ramChartController) {
+        this.ramChartController.addRamPoint(data.memory_mb);
+      }
     }
     if (clientsEl && data.active_clients !== undefined) {
       clientsEl.textContent = `${data.active_clients}`;
