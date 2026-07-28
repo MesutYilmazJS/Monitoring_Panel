@@ -49,6 +49,13 @@
       background: #374151;
     }
   </style>
+
+  <!-- CANLI BACKEND URL YAPILANDIRMASI (Railway URL'nizi buraya yazın) -->
+  <script>
+    // Railway panelinizden aldığınız canlı backend adresini buraya yapıştırın:
+    // Örn: window.BACKEND_URL = 'https://monitoringpanel-production.up.railway.app';
+    window.BACKEND_URL = 'https://monitoringpanel-production.up.railway.app';
+  </script>
 </head>
 <body class="h-full font-sans bg-[#0B0F19] text-gray-100 antialiased flex flex-col selection:bg-emerald-500 selection:text-slate-950">
 
@@ -75,7 +82,7 @@
         <span id="status-text" class="text-xs font-mono font-bold text-gray-400">CONNECTING...</span>
       </div>
       <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-gray-400 bg-gray-900/60 px-3 py-1 rounded-md border border-gray-800/60">
-        <span class="text-emerald-400">HOST:</span> localhost:3001
+        <span class="text-emerald-400">HOST:</span> <span id="host-label">localhost:3001</span>
       </div>
     </div>
   </header>

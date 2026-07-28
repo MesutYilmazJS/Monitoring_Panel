@@ -4,9 +4,17 @@
  */
 class App {
   constructor() {
-    const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? 'http://localhost:3001' 
-      : ''; // Canlı ortama geçtiğinde göreceli (relative) veya sabit URL kullanır
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // Check global BACKEND_URL variable, or fallback to localhost during local dev
+    let serverUrl = window.BACKEND_URL || (isLocal ? 'http://localhost:3001' : '');
+    
+    // Clean trailing slash if present
+    if (serverUrl && serverUrl.endsWith('/')) {
+      serverUrl = serverUrl.slice(0, -1);
+    }
+
+    console.log(`📡 [App Config] Connecting to Backend URL: ${serverUrl || 'Relative Host'}`);
 
     this.serverUrl = serverUrl;
     this.socketManager = new SocketManager(serverUrl);
@@ -20,6 +28,9 @@ class App {
    */
   async init() {
     console.log('🚀 Initializing Monitoring Panel Application...');
+
+    // Update Host Label in Header UI if backend URL is configured
+    this._updateHostUI();
 
     // 1. Initialize Components
     this.chartController.init();
@@ -102,6 +113,14 @@ class App {
       badgeText.className = 'text-xs font-mono font-bold text-red-400';
       badgeDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#EF4444]';
       badge.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/80';
+    }
+  }
+
+  _updateHostUI() {
+    const hostEl = document.getElementById('host-label');
+    if (hostEl) {
+      const displayUrl = this.serverUrl ? this.serverUrl.replace(/^https?:\/\//, '') : 'localhost:3001';
+      hostEl.textContent = displayUrl;
     }
   }
 }
