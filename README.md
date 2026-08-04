@@ -9,7 +9,6 @@
 ![Vercel & Railway](https://img.shields.io/badge/Live_Deployment-Vercel_%26_Railway-000000.svg)
 
 > **Web uygulamalarında oluşan siber güvenlik tehditlerini (SQLi, IDOR, XSS) ve performans kayıplarını milisaniye hassasiyetinde canlı izleyen, nesne yönelimli (OOP) full-stack telemetry paneli.**
-
 ---
 
 ## 🌐 Canlı Demo (Live Preview)
